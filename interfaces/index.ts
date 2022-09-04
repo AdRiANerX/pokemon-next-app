@@ -1,2 +1,2 @@
-export * from "./pokemonInterface";
+export * from "./pokemonSmall";
 export * from "./pokemonFull";

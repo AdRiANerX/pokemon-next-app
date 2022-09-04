@@ -1,17 +1,17 @@
 import React, { useState } from "react";
 import { GetStaticProps, GetStaticPaths, NextPage } from "next";
-import { Layout } from "../../components/layouts";
-import { Pokemon } from "../../interfaces";
-import { getPokemonInfo } from "../../api";
+import { Layout } from "../../../components/layouts";
+import { Pokemon, SmallPokemon } from "../../../interfaces";
+import { getPokemonInfo, pokeAPI } from "../../../api";
 import { Button, Card, Container, Grid, Image, Text } from "@nextui-org/react";
-import { isPokemonFavourite, toogleFavourite } from "../../utils";
+import { isPokemonFavourite, toogleFavourite } from "../../../utils";
 import confetti from "canvas-confetti";
 
 interface Props {
   pokemon: Pokemon;
 }
 
-const PokemonPageById: NextPage<Props> = ({ pokemon }: Props) => {
+const PokemonPageByName: NextPage<Props> = ({ pokemon }: Props) => {
   const [isFavourite, setIsFavourite] = useState(
     isPokemonFavourite(pokemon.id)
   );
@@ -101,24 +101,33 @@ const PokemonPageById: NextPage<Props> = ({ pokemon }: Props) => {
 
 // You should use getStaticPaths if you’re statically pre-rendering pages that use dynamic routes
 export const getStaticPaths: GetStaticPaths = async () => {
-  const allPokemons = [
-    ...Array(151)
-      .fill(0)
-      .map((val, i) => `${i + 1}`),
-  ];
+  const allPokemons: SmallPokemon[] = [];
+  await pokeAPI
+    .then(function (response) {
+      response.data.results.forEach((poke, i) => {
+        let index = i + 1;
+        allPokemons.push({
+          ...poke,
+          id: index.toString(),
+        });
+      });
+    })
+    .catch(function (error) {
+      console.error(error);
+    });
 
   return {
-    paths: allPokemons.map((id) => ({
-      params: { id },
+    paths: allPokemons.map((poke) => ({
+      params: { name: poke.name },
     })),
     fallback: false,
   };
 };
 
 export const getStaticProps: GetStaticProps = async (ctx) => {
-  const { id } = ctx.params as { id: string };
+  const { name } = ctx.params as { name: string };
   let thisPokemon = {};
-  await getPokemonInfo(id).then((pokemon) => {
+  await getPokemonInfo(name).then((pokemon) => {
     thisPokemon = pokemon;
   });
 
@@ -129,4 +138,4 @@ export const getStaticProps: GetStaticProps = async (ctx) => {
   };
 };
 
-export default PokemonPageById;
+export default PokemonPageByName;
